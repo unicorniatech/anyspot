@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import heroVideo from './assets/videos/anyspot-hero-video.mp4'
+import heroVideo from './assets/videos/anyspotvideo2.mp4'
 import './App.css'
 
 const storySteps = [
