@@ -43,14 +43,20 @@
 }
 
 .brand-mark {
-  display: grid;
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(255, 133, 82, 0.12);
+  box-shadow: 0 0 34px rgba(255, 133, 82, 0.46);
+}
+
+.brand-mark img {
   width: 34px;
   height: 34px;
-  place-items: center;
-  border-radius: 10px;
-  background: #ff8552;
-  color: #080807;
-  box-shadow: 0 0 36px rgba(255, 133, 82, 0.58);
+  object-fit: contain;
 }
 
 .nav-links {
@@ -375,6 +381,13 @@
     radial-gradient(circle at 20% 0%, rgba(255, 133, 82, 0.24), transparent 22rem),
     rgba(247, 243, 237, 0.06);
   text-align: center;
+}
+
+.waitlist-logo {
+  width: 106px;
+  height: auto;
+  margin-bottom: 14px;
+  filter: drop-shadow(0 18px 28px rgba(255, 133, 82, 0.2));
 }
 
 .waitlist h2 {

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import brandIcon from './assets/brand/anyspot-icon-transparent.png'
+import brandLogo from './assets/brand/anyspot-logo-transparent.png'
 import heroVideo from './assets/videos/anyspotvideo2.mp4'
 import './App.css'
 
@@ -84,7 +86,9 @@ function App() {
     <main className="landing">
       <nav className="nav">
         <a className="brand" href="#top" aria-label="AnySpot home">
-          <span className="brand-mark">A</span>
+          <span className="brand-mark" aria-hidden="true">
+            <img src={brandIcon} alt="" />
+          </span>
           <span>AnySpot</span>
         </a>
         <div className="nav-links" aria-label="Primary navigation">
@@ -201,6 +205,7 @@ function App() {
       </section>
 
       <section className="waitlist" id="waitlist">
+        <img className="waitlist-logo" src={brandLogo} alt="AnySpot" />
         <p className="section-kicker">Early access</p>
         <h2>Be first when AnySpot opens partner testing in Czechia.</h2>
         <form
