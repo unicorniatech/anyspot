@@ -88,8 +88,44 @@ function useScrollScrubVideo() {
   return { sectionRef, videoRef, progress, isReady, setIsReady }
 }
 
+function useScrollReveal<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const element = ref.current
+
+    if (!element) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) {
+          return
+        }
+
+        setIsVisible(true)
+        observer.disconnect()
+      },
+      {
+        rootMargin: '0px 0px -14% 0px',
+        threshold: 0.18,
+      },
+    )
+
+    observer.observe(element)
+
+    return () => observer.disconnect()
+  }, [])
+
+  return [ref, isVisible] as const
+}
+
 function App() {
   const heroScrub = useScrollScrubVideo()
+  const [creditGridRef, isCreditGridVisible] = useScrollReveal<HTMLDivElement>()
+  const [activityGridRef, isActivityGridVisible] = useScrollReveal<HTMLDivElement>()
   const {
     sectionRef: heroSectionRef,
     videoRef: heroVideoRef,
@@ -102,6 +138,23 @@ function App() {
   }, [heroProgress])
 
   const progressPercent = `${Math.round(heroProgress * 100)}%`
+  const markHeroVideoReady = () => {
+    setIsHeroReady(true)
+
+    const video = heroVideoRef.current
+
+    if (!video) {
+      return
+    }
+
+    video.muted = true
+    video.playsInline = true
+
+    void video
+      .play()
+      .then(() => video.pause())
+      .catch(() => undefined)
+  }
 
   return (
     <main className="landing">
@@ -132,7 +185,9 @@ function App() {
             muted
             playsInline
             preload="auto"
-            onLoadedMetadata={() => setIsHeroReady(true)}
+            onCanPlay={markHeroVideoReady}
+            onLoadedData={markHeroVideoReady}
+            onLoadedMetadata={markHeroVideoReady}
             aria-label="AnySpot cinematic fitness preview"
           />
           <div className="video-overlay" />
@@ -172,18 +227,21 @@ function App() {
           <p className="section-kicker">How credits work</p>
           <h2>One balance. Many ways to train.</h2>
         </div>
-        <div className="credit-grid">
-          <article>
+        <div
+          ref={creditGridRef}
+          className={`credit-grid reveal-grid ${isCreditGridVisible ? 'is-visible' : ''}`}
+        >
+          <article style={{ '--item-index': 0 } as CSSProperties}>
             <span>01</span>
             <h3>Buy credits</h3>
             <p>Choose a pack in CZK and keep full control over your fitness budget.</p>
           </article>
-          <article>
+          <article style={{ '--item-index': 1 } as CSSProperties}>
             <span>02</span>
             <h3>Book instantly</h3>
             <p>Use credits for yoga, padel, pilates, strength, cycling, and more.</p>
           </article>
-          <article>
+          <article style={{ '--item-index': 2 } as CSSProperties}>
             <span>03</span>
             <h3>Studios earn fairly</h3>
             <p>Gyms receive around 85 percent per completed visit in the initial model.</p>
@@ -218,12 +276,20 @@ function App() {
           <p className="section-kicker">Featured activities</p>
           <h2>Built for the way people actually move around a city.</h2>
         </div>
-        <div className="activity-grid">
-          {activities.map((activity) => (
+        <div
+          ref={activityGridRef}
+          className={`activity-grid reveal-grid ${isActivityGridVisible ? 'is-visible' : ''}`}
+        >
+          {activities.map((activity, index) => (
             <a
               href="#waitlist"
               key={activity.name}
-              style={{ '--popularity': `${activity.popularity}%` } as CSSProperties}
+              style={
+                {
+                  '--item-index': index,
+                  '--popularity': `${activity.popularity}%`,
+                } as CSSProperties
+              }
             >
               <span className="activity-name">{activity.name}</span>
               <span className="activity-number">
