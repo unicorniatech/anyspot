@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { Dashboards } from './Dashboards'
 import brandIcon from './assets/brand/anyspot-icon-transparent.png'
 import brandLogo from './assets/brand/anyspot-logo-transparent.png'
+import goldenCardIntro from './assets/cards/golden-card-intro.png'
 import heroVideo from './assets/videos/anyspotvideo2.mp4'
 import './App.css'
 
@@ -22,9 +24,16 @@ const storySteps = [
   },
 ]
 
-const activities = ['Yoga', 'Pilates', 'Barre', 'Padel', 'Cycling', 'Strength']
+const activities = [
+  { name: 'Yoga', popularity: 84, bookings: 1240, trend: '+18%' },
+  { name: 'Pilates', popularity: 92, bookings: 1680, trend: '+31%' },
+  { name: 'Barre', popularity: 68, bookings: 740, trend: '+14%' },
+  { name: 'Padel', popularity: 76, bookings: 910, trend: '+22%' },
+  { name: 'Cycling', popularity: 71, bookings: 820, trend: '+11%' },
+  { name: 'Strength', popularity: 88, bookings: 1510, trend: '+27%' },
+]
 
-function App() {
+function useScrollScrubVideo() {
   const sectionRef = useRef<HTMLElement | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [progress, setProgress] = useState(0)
@@ -48,7 +57,7 @@ function App() {
         }
 
         const rect = section.getBoundingClientRect()
-        const scrollable = section.offsetHeight - window.innerHeight
+        const scrollable = Math.max(section.offsetHeight - window.innerHeight, 1)
         const rawProgress = Math.min(Math.max(-rect.top / scrollable, 0), 1)
 
         setProgress(rawProgress)
@@ -76,11 +85,23 @@ function App() {
     }
   }, [])
 
-  const activeStep = useMemo(() => {
-    return Math.min(storySteps.length - 1, Math.floor(progress * storySteps.length))
-  }, [progress])
+  return { sectionRef, videoRef, progress, isReady, setIsReady }
+}
 
-  const progressPercent = `${Math.round(progress * 100)}%`
+function App() {
+  const heroScrub = useScrollScrubVideo()
+  const {
+    sectionRef: heroSectionRef,
+    videoRef: heroVideoRef,
+    progress: heroProgress,
+    isReady: isHeroReady,
+    setIsReady: setIsHeroReady,
+  } = heroScrub
+  const activeStep = useMemo(() => {
+    return Math.min(storySteps.length - 1, Math.floor(heroProgress * storySteps.length))
+  }, [heroProgress])
+
+  const progressPercent = `${Math.round(heroProgress * 100)}%`
 
   return (
     <main className="landing">
@@ -94,6 +115,7 @@ function App() {
         <div className="nav-links" aria-label="Primary navigation">
           <a href="#credits">Credits</a>
           <a href="#gyms">For gyms</a>
+          <a href="#dashboards">Dashboards</a>
           <a href="#waitlist">Waitlist</a>
         </div>
         <a className="nav-cta" href="#waitlist">
@@ -101,16 +123,16 @@ function App() {
         </a>
       </nav>
 
-      <section className="scroll-cinema" id="top" ref={sectionRef}>
+      <section className="scroll-cinema" id="top" ref={heroSectionRef}>
         <div className="cinema-sticky">
           <video
-            ref={videoRef}
-            className={`hero-video ${isReady ? 'is-ready' : ''}`}
+            ref={heroVideoRef}
+            className={`hero-video ${isHeroReady ? 'is-ready' : ''}`}
             src={heroVideo}
             muted
             playsInline
             preload="auto"
-            onLoadedMetadata={() => setIsReady(true)}
+            onLoadedMetadata={() => setIsHeroReady(true)}
             aria-label="AnySpot cinematic fitness preview"
           />
           <div className="video-overlay" />
@@ -169,23 +191,24 @@ function App() {
         </div>
       </section>
 
-      <section className="section split" id="gyms">
-        <div className="split-copy">
-          <p className="section-kicker">For gyms and studios</p>
-          <h2>More than bookings. A fair operating layer for boutique fitness.</h2>
-          <p>
-            Manage reservations, class capacity, payouts, customer discovery,
-            and schedule experiments without a long-term commitment.
-          </p>
-        </div>
-        <div className="compare-card">
-          <div>
-            <span>Typical card payout</span>
-            <strong>Low and opaque</strong>
+      <section className="card-showcase" id="gyms">
+        <div className="card-showcase-inner">
+          <div className="card-copy">
+            <p className="section-kicker">For gyms and studios</p>
+            <h2>Membership cards that feel as premium as the studios behind them.</h2>
+            <p>
+              AnySpot can present credits as a cinematic pass: flexible for users,
+              fair for gyms, and ready to become a real wallet, booking, and payout layer.
+            </p>
+            <div className="gym-value-pills" aria-label="Gym value highlights">
+              <span>85% gym payout model</span>
+              <span>14-day payouts</span>
+              <span>Credit wallet ready</span>
+            </div>
           </div>
-          <div>
-            <span>AnySpot MVP model</span>
-            <strong>Approx. 85% to the gym</strong>
+
+          <div className="single-card-stage" aria-label="AnySpot premium membership card">
+            <img src={goldenCardIntro} alt="AnySpot golden premium membership card" />
           </div>
         </div>
       </section>
@@ -197,8 +220,17 @@ function App() {
         </div>
         <div className="activity-grid">
           {activities.map((activity) => (
-            <a href="#waitlist" key={activity}>
-              {activity}
+            <a
+              href="#waitlist"
+              key={activity.name}
+              style={{ '--popularity': `${activity.popularity}%` } as CSSProperties}
+            >
+              <span className="activity-name">{activity.name}</span>
+              <span className="activity-number">
+                <AnimatedNumber value={activity.bookings} /> bookings
+              </span>
+              <span className="activity-trend">{activity.trend} demand</span>
+              <span className="activity-fill" aria-hidden="true" />
             </a>
           ))}
         </div>
@@ -220,8 +252,54 @@ function App() {
         </form>
         <p className="form-success">You are on the list. Nice.</p>
       </section>
+
+      <Dashboards brandIcon={brandIcon} />
     </main>
   )
+}
+
+function AnimatedNumber({ value }: { value: number }) {
+  const numberRef = useRef<HTMLSpanElement | null>(null)
+  const [displayValue, setDisplayValue] = useState(0)
+
+  useEffect(() => {
+    const element = numberRef.current
+
+    if (!element) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) {
+          return
+        }
+
+        const start = performance.now()
+        const duration = 1100
+
+        const tick = (now: number) => {
+          const progress = Math.min((now - start) / duration, 1)
+          const eased = 1 - Math.pow(1 - progress, 3)
+          setDisplayValue(Math.round(value * eased))
+
+          if (progress < 1) {
+            window.requestAnimationFrame(tick)
+          }
+        }
+
+        window.requestAnimationFrame(tick)
+        observer.disconnect()
+      },
+      { threshold: 0.35 },
+    )
+
+    observer.observe(element)
+
+    return () => observer.disconnect()
+  }, [value])
+
+  return <span ref={numberRef}>{displayValue.toLocaleString('cs-CZ')}</span>
 }
 
 export default App
