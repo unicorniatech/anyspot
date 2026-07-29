@@ -65,9 +65,9 @@ export type AnySpotMockState = {
   payouts: Payout[]
   auditEvents: AuditEvent[]
   platformSettings: {
-    commissionPercent: number
+    transactionFeePercent: number
+    monthlySubscriptionCzk: number
     firstTenGymsFreeMonths: number
-    payoutCadenceDays: number
     redisCachePlanned: boolean
   }
 }

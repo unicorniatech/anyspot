@@ -12,6 +12,23 @@ export type PersistenceDriver = {
 const cloneState = (state: AnySpotMockState): AnySpotMockState =>
   JSON.parse(JSON.stringify(state)) as AnySpotMockState
 
+const normalizeState = (state: AnySpotMockState): AnySpotMockState => {
+  const normalized = cloneState(state)
+
+  normalized.platformSettings = {
+    ...initialMockState.platformSettings,
+    ...normalized.platformSettings,
+    transactionFeePercent:
+      normalized.platformSettings.transactionFeePercent ??
+      initialMockState.platformSettings.transactionFeePercent,
+    monthlySubscriptionCzk:
+      normalized.platformSettings.monthlySubscriptionCzk ??
+      initialMockState.platformSettings.monthlySubscriptionCzk,
+  }
+
+  return normalized
+}
+
 export const localStorageDriver: PersistenceDriver = {
   async read() {
     if (typeof window === 'undefined') {
@@ -27,7 +44,9 @@ export const localStorageDriver: PersistenceDriver = {
     }
 
     try {
-      return JSON.parse(cached) as AnySpotMockState
+      const normalized = normalizeState(JSON.parse(cached) as AnySpotMockState)
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized))
+      return normalized
     } catch {
       const seeded = cloneState(initialMockState)
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded))

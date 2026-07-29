@@ -17,15 +17,15 @@ type Audience = 'gym' | 'client'
 const gymBenefits = [
   {
     title: 'Fill unused class capacity',
-    body: 'Turn empty spots into paid visits without discounting your public prices.',
+    body: 'Turn quiet hours into booked sessions while keeping your own pricing and customer relationship.',
   },
   {
-    title: 'Keep a fairer visit payout',
-    body: 'The MVP model targets about 85% back to the studio on completed visits.',
+    title: 'One monthly subscription',
+    body: 'No transaction fees, no surprise commissions, no paying more just because your studio is growing.',
   },
   {
-    title: 'Run bookings from one place',
-    body: 'Capacity, reservations, payouts, and schedule updates stay in one operating layer.',
+    title: 'Run operations from one place',
+    body: 'Capacity, reservations, reports, content, and schedule updates stay in one operating layer.',
   },
 ]
 
@@ -45,8 +45,8 @@ const clientBenefits = [
 ]
 
 const gymMetrics = [
-  { value: '85%', label: 'target payout model' },
-  { value: '14d', label: 'payout rhythm' },
+  { value: '0%', label: 'transaction fees' },
+  { value: '1', label: 'monthly subscription' },
   { value: '10', label: 'pilot studio spots' },
 ]
 
@@ -60,8 +60,8 @@ const operatingCards = [
     body: 'Protect regular members while opening only the spots you want to sell through AnySpot.',
   },
   {
-    title: 'Payouts',
-    body: 'A simple estimate of completed visits, commission, and upcoming payout windows.',
+    title: 'Revenue clarity',
+    body: 'A simple view of bookings, subscription value, and revenue activity without commission math.',
   },
   {
     title: 'Class calendar',
@@ -92,7 +92,7 @@ const gymPlatformCards = [
   },
   {
     title: 'Website and hosting included',
-    body: 'Run your gym website on the AnySpot platform without separate hosting fees: one monthly subscription, no extra platform fees.',
+    body: 'Run your gym website on the AnySpot platform without separate cloud bills: one monthly subscription, zero transaction fees.',
   },
 ]
 
@@ -480,7 +480,8 @@ function GymLanding() {
           </h1>
           <p>
             AnySpot helps boutique gyms, yoga studios, pilates rooms, padel clubs, and trainers
-            bring in new clients while keeping a clearer, fairer payout model.
+            bring in new clients with one predictable subscription instead of transaction fees,
+            cloud bills, and disconnected tools.
           </p>
           <div className="metric-row" aria-label="AnySpot studio pilot metrics">
             {gymMetrics.map((metric) => (
@@ -523,21 +524,21 @@ function GymLanding() {
             <BenefitCard key={benefit.title} {...benefit} />
           ))}
           <div className="large-bento reveal-card">
-            <span>Approx. 85%</span>
-            <h3>Target studio payout on completed MVP visits.</h3>
+            <span>0% fees</span>
+            <h3>Your studio revenue should not be taxed every time someone books.</h3>
           </div>
           <div className="image-bento reveal-card motion-image" />
         </div>
       </section>
 
       <ScrollStatement
-        words="Turn quiet hours into booked sessions, control capacity, see expected payouts, and learn which classes bring the right clients back."
+        words="Turn quiet hours into booked sessions, control capacity, protect your data, and learn which classes bring the right clients back."
       />
 
       <section className="operating-section">
         <div className="section-copy">
           <h2>A booking layer that can become your fitness operating system.</h2>
-          <p>Start with discovery and reservations. Grow into payouts, schedules, and partner analytics.</p>
+          <p>Start with discovery and reservations. Grow into schedules, reports, AI assistance, and partner analytics.</p>
         </div>
         <div className="ops-grid">
           {operatingCards.map((item) => (
@@ -555,7 +556,8 @@ function GymLanding() {
           <h2>More than reservations: a resilient operating layer for your studio.</h2>
           <p>
             AnySpot can support bookings, questions, reports, advice, content, and your public web
-            presence through one monthly subscription instead of scattered tools and extra fees.
+            presence through one monthly subscription instead of scattered tools, transaction fees,
+            and expensive cloud dependency.
           </p>
         </div>
         <div className="platform-grid">
@@ -567,10 +569,11 @@ function GymLanding() {
           ))}
         </div>
         <div className="infrastructure-banner reveal-card">
-          <strong>No usage fees in the MVP offer.</strong>
+          <strong>One subscription. No transaction fees.</strong>
           <p>
-            A simple monthly subscription for modern hosting, protected data workflows, and
-            state-of-the-art hyperlocal connections between your studio and the people nearby.
+            We go beyond ordinary SaaS with protected data workflows and resilient hyperlocal
+            hardware, reducing dependence on expensive cloud layers while keeping your studio
+            connected to people nearby.
           </p>
         </div>
       </section>
@@ -579,7 +582,7 @@ function GymLanding() {
         audience="gym"
         id="gym-register"
         title="Register your studio for the pilot conversation."
-        body="Leave the basics and we will schedule a Zoom or in-person intro to understand your classes, pricing, capacity, and payout expectations."
+        body="Leave the basics and we will schedule a Zoom or in-person intro to understand your classes, pricing, capacity, website needs, and local infrastructure fit."
         fields={[
           { name: 'name', label: 'Your name', type: 'text' },
           { name: 'email', label: 'Email', type: 'email' },

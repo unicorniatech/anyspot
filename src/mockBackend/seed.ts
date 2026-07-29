@@ -142,9 +142,9 @@ export const initialMockState: AnySpotMockState = {
     },
   ],
   platformSettings: {
-    commissionPercent: 15,
+    transactionFeePercent: 0,
+    monthlySubscriptionCzk: 2490,
     firstTenGymsFreeMonths: 3,
-    payoutCadenceDays: 14,
     redisCachePlanned: true,
   },
 }

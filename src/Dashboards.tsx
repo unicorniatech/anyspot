@@ -18,7 +18,7 @@ const roles: { id: Role; label: string; description: string; scope: string }[] =
   {
     id: 'management',
     label: 'Management',
-    description: 'Classes, revenue, payouts',
+    description: 'Classes, revenue, subscription value',
     scope: 'Gym operator',
   },
   {
@@ -78,14 +78,14 @@ export function Dashboards({ brandIcon }: DashboardsProps) {
     }
 
     const totalBookings = state.gyms.reduce((sum, gym) => sum + gym.monthlyBookings, 0)
-    const payoutDue = state.payouts.reduce((sum, payout) => sum + payout.amountCzk, 0)
+    const studioRevenue = state.gyms.reduce((sum, gym) => sum + gym.payoutDueCzk, 0)
     const activeGyms = state.gyms.filter((gym) => gym.status === 'active').length
 
     return [
       { label: 'Active gyms', value: activeGyms.toString() },
       { label: 'Monthly bookings', value: totalBookings.toLocaleString('cs-CZ') },
-      { label: 'Payout queue', value: formatCzk(payoutDue) },
-      { label: 'Commission', value: `${state.platformSettings.commissionPercent}%` },
+      { label: 'Studio revenue tracked', value: formatCzk(studioRevenue) },
+      { label: 'Transaction fee', value: `${state.platformSettings.transactionFeePercent}%` },
     ]
   }, [state])
 
@@ -108,8 +108,8 @@ export function Dashboards({ brandIcon }: DashboardsProps) {
           <h2>Role dashboards with local persistence.</h2>
           <p>
             This is still frontend-only, but the data is structured like a future backend:
-            localStorage today, Supabase/Postgres as source of truth later, Redis for cache
-            and fast operational state.
+            localStorage today, Supabase/Postgres as source of truth later, Redis and hyperlocal
+            hardware for resilient operational state.
           </p>
         </div>
         <div className="persistence-card">
@@ -416,7 +416,7 @@ function ManagementDashboard({
         <div className="big-number">
           {formatCzk(state.gyms.reduce((sum, gym) => sum + gym.payoutDueCzk, 0))}
         </div>
-        <p>Estimated studio payout for the current 14-day period.</p>
+        <p>Tracked studio-side booking revenue. AnySpot does not take a transaction fee.</p>
       </DashboardCard>
       <DashboardCard title="Schedule optimization">
         <p>
@@ -433,7 +433,7 @@ function ManagementDashboard({
           ]}
         />
       </DashboardCard>
-      <DashboardCard title="Payout health">
+      <DashboardCard title="Revenue health">
         <PayoutList payouts={state.payouts} gyms={state.gyms} />
       </DashboardCard>
       <DashboardCard title="Class management" wide>
@@ -490,7 +490,7 @@ function AdminDashboard({
         <List>
           <li>
             <strong>Nova Barre needs onboarding</strong>
-            <span>Missing payout details and class capacity rules</span>
+            <span>Missing subscription setup and class capacity rules</span>
           </li>
           <li>
             <strong>Karlin evenings near full</strong>
@@ -509,7 +509,7 @@ function AdminDashboard({
           ))}
         </div>
       </DashboardCard>
-      <DashboardCard title="Payout operations" wide>
+      <DashboardCard title="Revenue operations" wide>
         <PayoutList payouts={state.payouts} gyms={state.gyms} />
       </DashboardCard>
     </div>
@@ -523,16 +523,16 @@ function SuperadminDashboard({
   state: AnySpotMockState
   persist: (updater: (draft: AnySpotMockState) => AnySpotMockState) => void
 }) {
-  const updateCommission = (direction: 1 | -1) => {
+  const updateSubscription = (direction: 1 | -1) => {
     persist((draft) => {
-      draft.platformSettings.commissionPercent = Math.min(
-        25,
-        Math.max(5, draft.platformSettings.commissionPercent + direction),
+      draft.platformSettings.monthlySubscriptionCzk = Math.min(
+        8990,
+        Math.max(990, draft.platformSettings.monthlySubscriptionCzk + direction * 250),
       )
       draft.auditEvents.unshift({
         id: `audit_${Date.now()}`,
         actor: 'Founder Control',
-        action: `Changed commission to ${draft.platformSettings.commissionPercent}%`,
+        action: `Changed monthly subscription to ${formatCzk(draft.platformSettings.monthlySubscriptionCzk)}`,
         createdAt: 'Just now',
       })
       return draft
@@ -543,20 +543,24 @@ function SuperadminDashboard({
     <div className="dashboard-grid">
       <DashboardCard title="Founder controls">
         <div className="setting-control">
-          <span>Platform commission</span>
-          <strong>{state.platformSettings.commissionPercent}%</strong>
+          <span>Monthly studio subscription</span>
+          <strong>{formatCzk(state.platformSettings.monthlySubscriptionCzk)}</strong>
           <div>
-            <button type="button" onClick={() => updateCommission(-1)}>
-              -1
+            <button type="button" onClick={() => updateSubscription(-1)}>
+              -250
             </button>
-            <button type="button" onClick={() => updateCommission(1)}>
-              +1
+            <button type="button" onClick={() => updateSubscription(1)}>
+              +250
             </button>
           </div>
         </div>
+        <p>Transaction fee stays fixed at {state.platformSettings.transactionFeePercent}%.</p>
       </DashboardCard>
-      <DashboardCard title="Redis-ready plan">
-        <p>{redisReadyDriverNotes.productionShape}</p>
+      <DashboardCard title="Hyperlocal hardware plan">
+        <p>
+          {redisReadyDriverNotes.productionShape} The product direction adds resilient local
+          hardware so studios are not paying endless cloud fees for every operational touch.
+        </p>
       </DashboardCard>
       <DashboardCard title="Feature flags">
         <List>
@@ -570,7 +574,7 @@ function SuperadminDashboard({
           </li>
           <li>
             <strong>Redis cache</strong>
-            <span>{state.platformSettings.redisCachePlanned ? 'Planned boundary' : 'Off'}</span>
+            <span>{state.platformSettings.redisCachePlanned ? 'Planned with local hardware boundary' : 'Off'}</span>
           </li>
         </List>
       </DashboardCard>
@@ -685,7 +689,7 @@ function PayoutList({ payouts, gyms }: { payouts: Payout[]; gyms: Gym[] }) {
           <div className="table-row" key={payout.id}>
             <div>
               <strong>{gym?.name}</strong>
-              <span>{payout.period} · {payout.status}</span>
+              <span>{payout.period} · revenue tracking · {payout.status}</span>
             </div>
             <strong>{formatCzk(payout.amountCzk)}</strong>
           </div>
