@@ -1,6 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { localStorageDriver, redisReadyDriverNotes } from './mockBackend/persistence'
 import type { AnySpotMockState, FitnessClass, Gym, Payout, Role } from './mockBackend/types'
+
+gsap.registerPlugin(ScrollTrigger)
 
 const roles: { id: Role; label: string; description: string; scope: string }[] = [
   {
@@ -35,6 +39,44 @@ const roles: { id: Role; label: string; description: string; scope: string }[] =
   },
 ]
 
+const roleAiInsights: Record<Role, string> = {
+  user: 'AI studies goals, training load, recovery, and preferred locations before suggesting the next class.',
+  reception: 'AI highlights late arrivals, check-in bottlenecks, no-show risk, and open capacity in real time.',
+  management: 'AI recommends class times, content prompts, staffing moves, and revenue opportunities.',
+  admin: 'AI summarizes partner risk, launch supply gaps, approvals, and city-level demand.',
+  superadmin: 'AI watches the operating model, subscription settings, privacy boundaries, and infrastructure health.',
+}
+
+const aiDashboardCards = [
+  {
+    title: 'Booking intelligence',
+    metric: '92%',
+    body: 'Predicted fit between capacity, trainer availability, local demand, and user goals.',
+  },
+  {
+    title: 'AI content studio',
+    metric: '18',
+    body: 'Draft class posts, trainer spotlights, onboarding notes, and campaign ideas from schedule data.',
+  },
+  {
+    title: 'Privacy posture',
+    metric: 'Local',
+    body: 'Sensitive operational state can stay close to the studio before syncing to the cloud layer.',
+  },
+  {
+    title: 'Action report',
+    metric: '4 min',
+    body: 'Mock assistant turns bookings, check-ins, and revenue signals into a plain-language summary.',
+  },
+]
+
+const aiCommandLines = [
+  'Analyzing Karlin evening capacity...',
+  'Drafting studio content for Reformer Flow...',
+  'Matching clients by goal, intensity, and recovery window...',
+  'Checking privacy boundary before report export...',
+]
+
 const formatCzk = (amount: number) =>
   new Intl.NumberFormat('cs-CZ', {
     style: 'currency',
@@ -50,6 +92,7 @@ export function Dashboards({ brandIcon }: DashboardsProps) {
   const [state, setState] = useState<AnySpotMockState | null>(null)
   const [activeRole, setActiveRole] = useState<Role>('user')
   const [isSaving, setIsSaving] = useState(false)
+  const dashboardRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     void localStorageDriver.read().then(setState)
@@ -71,6 +114,72 @@ export function Dashboards({ brandIcon }: DashboardsProps) {
   const resetWorkspace = () => {
     void localStorageDriver.reset().then(setState)
   }
+
+  useEffect(() => {
+    if (!state || !dashboardRef.current) {
+      return
+    }
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const context = gsap.context(() => {
+      if (reduceMotion) {
+        gsap.set('.ai-dashboard-card, .dashboard-card, .metric-card, .role-tabs button', {
+          clearProps: 'all',
+          opacity: 1,
+        })
+
+        return
+      }
+
+      gsap.fromTo(
+        '.ai-dashboard-card',
+        { opacity: 0, y: 36, scale: 0.95 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.82,
+          ease: 'power3.out',
+          stagger: 0.08,
+          scrollTrigger: {
+            trigger: '.ai-dashboard-grid',
+            start: 'top 82%',
+            once: true,
+          },
+        },
+      )
+
+      gsap.fromTo(
+        '.metric-card, .role-tabs button, .dashboard-card',
+        { opacity: 0, y: 18 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.54,
+          ease: 'power2.out',
+          stagger: 0.035,
+        },
+      )
+
+      gsap.to('.ai-orbit-ring', {
+        rotate: 360,
+        duration: 18,
+        ease: 'none',
+        repeat: -1,
+      })
+
+      gsap.to('.ai-pulse-core', {
+        scale: 1.08,
+        opacity: 0.72,
+        duration: 1.8,
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true,
+      })
+    }, dashboardRef)
+
+    return () => context.revert()
+  }, [activeRole, state])
 
   const metrics = useMemo(() => {
     if (!state) {
@@ -101,15 +210,13 @@ export function Dashboards({ brandIcon }: DashboardsProps) {
   }
 
   return (
-    <section className="dashboard-shell" id="dashboards">
+    <section ref={dashboardRef} className="dashboard-shell" id="dashboards">
       <div className="dashboard-header">
         <div>
-          <p className="section-kicker">MVP backend mock</p>
           <h2>Role dashboards with local persistence.</h2>
           <p>
-            This is still frontend-only, but the data is structured like a future backend:
-            localStorage today, Supabase/Postgres as source of truth later, Redis and hyperlocal
-            hardware for resilient operational state.
+            A cinematic mock backend for the demo: AI assistance, role workspaces, local
+            persistence, privacy boundaries, and hyperlocal infrastructure concepts in one surface.
           </p>
         </div>
         <div className="persistence-card">
@@ -123,9 +230,48 @@ export function Dashboards({ brandIcon }: DashboardsProps) {
 
       <div className="metric-grid">
         {metrics.map((metric) => (
-          <article className="metric-card" key={metric.label}>
+          <article className="metric-card reveal-card" key={metric.label}>
             <span>{metric.label}</span>
             <strong>{metric.value}</strong>
+          </article>
+        ))}
+      </div>
+
+      <div className="ai-dashboard-grid">
+        <article className="ai-dashboard-card ai-dashboard-card-large">
+          <div>
+            <span>AI operating layer</span>
+            <h3>One assistant across bookings, reports, content, and class recommendations.</h3>
+          </div>
+          <div className="ai-orbit-stage" aria-hidden="true">
+            <i className="ai-orbit-ring" />
+            <i className="ai-orbit-ring ai-orbit-ring-offset" />
+            <b className="ai-pulse-core" />
+          </div>
+        </article>
+
+        {aiDashboardCards.slice(0, 2).map((card) => (
+          <article className="ai-dashboard-card ai-dashboard-card-stat" key={card.title}>
+            <span>{card.title}</span>
+            <strong>{card.metric}</strong>
+            <p>{card.body}</p>
+          </article>
+        ))}
+
+        <article className="ai-dashboard-card ai-command-card">
+          <span>Live command mock</span>
+          <div className="ai-command-lines">
+            {aiCommandLines.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        </article>
+
+        {aiDashboardCards.slice(2).map((card) => (
+          <article className="ai-dashboard-card ai-dashboard-card-stat" key={card.title}>
+            <span>{card.title}</span>
+            <strong>{card.metric}</strong>
+            <p>{card.body}</p>
           </article>
         ))}
       </div>
@@ -164,6 +310,10 @@ export function Dashboards({ brandIcon }: DashboardsProps) {
           <span>{activeRoleMeta.scope}</span>
           <h3>{activeRoleMeta.label} dashboard</h3>
           <p>{activeRoleMeta.description}</p>
+          <div className="role-ai-note">
+            <strong>AI layer</strong>
+            <span>{roleAiInsights[activeRole]}</span>
+          </div>
         </div>
         {activeRole === 'user' && <UserDashboard state={state} persist={persist} />}
         {activeRole === 'reception' && <ReceptionDashboard state={state} persist={persist} />}
@@ -182,6 +332,14 @@ function UserDashboard({
   state: AnySpotMockState
   persist: (updater: (draft: AnySpotMockState) => AnySpotMockState) => void
 }) {
+  const [assistantMode, setAssistantMode] = useState<'ready' | 'analyzing' | 'applied' | 'alternatives' | 'chat'>('ready')
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false)
+  const [actionMessage, setActionMessage] = useState('AI plan ready for review.')
+  const [trainingPlan, setTrainingPlan] = useState([
+    { label: 'Strength', value: 80 },
+    { label: 'Mobility', value: 54 },
+    { label: 'Recovery', value: 38 },
+  ])
   const user = state.users.find((candidate) => candidate.role === 'user')
   const upcoming = state.bookings
     .filter((booking) => booking.userId === user?.id)
@@ -192,6 +350,7 @@ function UserDashboard({
 
   const bookClass = (fitnessClass: FitnessClass) => {
     if (!user || user.creditsBalance < fitnessClass.creditsRequired) {
+      setActionMessage('Add credits before booking this class.')
       return
     }
 
@@ -214,9 +373,11 @@ function UserDashboard({
 
       return draft
     })
+    setActionMessage(`${fitnessClass.title} booked and added to upcoming classes.`)
+    setAssistantMode('applied')
   }
 
-  const addCredits = (credits: number) => {
+  const addCredits = (credits: number, label = `Added ${credits} credits`) => {
     if (!user) {
       return
     }
@@ -230,6 +391,39 @@ function UserDashboard({
 
       return draft
     })
+    setActionMessage(`${label}. Wallet updated for this session.`)
+    setAssistantMode('ready')
+  }
+
+  const runAssistantAction = (mode: 'applied' | 'alternatives' | 'chat') => {
+    setAssistantMode('analyzing')
+    setActionMessage('AI is checking your goal, credits, bookings, and recovery window...')
+
+    window.setTimeout(() => {
+      setAssistantMode(mode)
+
+      if (mode === 'applied') {
+        setTrainingPlan([
+          { label: 'Strength', value: 88 },
+          { label: 'Mobility', value: 62 },
+          { label: 'Recovery', value: 46 },
+        ])
+        setActionMessage('Plan applied: strength priority increased, recovery protected for Friday.')
+        return
+      }
+
+      if (mode === 'alternatives') {
+        setTrainingPlan([
+          { label: 'Pilates', value: 72 },
+          { label: 'Padel', value: 58 },
+          { label: 'Recovery', value: 52 },
+        ])
+        setActionMessage('Generated alternatives: Pilates tomorrow, padel Saturday, recovery Friday.')
+        return
+      }
+
+      setActionMessage('Assistant ready: ask about goals, soreness, time slots, or class intensity.')
+    }, 900)
   }
 
   return (
@@ -250,27 +444,26 @@ function UserDashboard({
           ))}
         </List>
       </DashboardCard>
-      <DashboardCard title="AI recommendation placeholder" wide>
-        <p>
-          Future OpenAI assistant: recommend classes from goals, location, schedule,
-          previous bookings, credit budget, and recovery needs.
-        </p>
+      <DashboardCard title="AI training assistant" wide accent>
+        <AiTrainingAssistant
+          actionMessage={actionMessage}
+          mode={assistantMode}
+          onApplyPlan={() => runAssistantAction('applied')}
+          onAskAssistant={() => runAssistantAction('chat')}
+          onChangeDetails={() => setIsGoalModalOpen(true)}
+          onGenerateAlternatives={() => runAssistantAction('alternatives')}
+        />
       </DashboardCard>
       <DashboardCard title="Weekly training plan">
-        <MiniBars
-          items={[
-            { label: 'Strength', value: 80 },
-            { label: 'Mobility', value: 54 },
-            { label: 'Recovery', value: 38 },
-          ]}
-        />
+        <MiniBars items={trainingPlan} />
       </DashboardCard>
       <DashboardCard title="Credit packages">
         <div className="package-stack">
           <button type="button" onClick={() => addCredits(5)}>Add 5 credits</button>
           <button type="button" onClick={() => addCredits(12)}>Add 12 credits</button>
-          <button type="button" onClick={() => addCredits(25)}>Mock checkout</button>
+          <button type="button" onClick={() => addCredits(25, 'Mock checkout complete')}>Mock checkout</button>
         </div>
+        <p className="dashboard-action-message">{actionMessage}</p>
       </DashboardCard>
       <DashboardCard title="Bookable classes" wide>
         <div className="class-row-list">
@@ -287,6 +480,15 @@ function UserDashboard({
           ))}
         </div>
       </DashboardCard>
+      {isGoalModalOpen && (
+        <AiGoalModal
+          onClose={() => setIsGoalModalOpen(false)}
+          onSave={() => {
+            setIsGoalModalOpen(false)
+            runAssistantAction('alternatives')
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -418,9 +620,9 @@ function ManagementDashboard({
         </div>
         <p>Tracked studio-side booking revenue. AnySpot does not take a transaction fee.</p>
       </DashboardCard>
-      <DashboardCard title="Schedule optimization">
+      <DashboardCard title="AI schedule optimization" accent>
         <p>
-          Future AI concept: detect under-filled time slots, recommend class times,
+          Detect under-filled time slots, recommend class times, draft campaign ideas,
           and simulate credit demand before publishing.
         </p>
       </DashboardCard>
@@ -610,17 +812,129 @@ function MiniBars({ items }: { items: { label: string; value: number }[] }) {
   )
 }
 
+function AiTrainingAssistant({
+  actionMessage,
+  mode,
+  onApplyPlan,
+  onAskAssistant,
+  onChangeDetails,
+  onGenerateAlternatives,
+}: {
+  actionMessage: string
+  mode: 'ready' | 'analyzing' | 'applied' | 'alternatives' | 'chat'
+  onApplyPlan: () => void
+  onAskAssistant: () => void
+  onChangeDetails: () => void
+  onGenerateAlternatives: () => void
+}) {
+  const isAnalyzing = mode === 'analyzing'
+  const insight =
+    mode === 'alternatives'
+      ? 'Alternative path created: lower intensity, more mobility, and a weekend social class.'
+      : mode === 'applied'
+        ? 'Plan applied: your next class mix now favors strength while protecting recovery.'
+        : mode === 'chat'
+          ? 'Assistant is ready to answer follow-up questions about soreness, goals, and class fit.'
+          : 'Ready to optimize your week from goals, credits, location, and booking history.'
+
+  return (
+    <div className="ai-training-assistant">
+      <div className="ai-training-main">
+        <div className={`ai-loader-line ${isAnalyzing ? 'is-running' : 'is-complete'}`}>
+          <span />
+          <p>{isAnalyzing ? 'Analyzing goals, credits, intensity, and recovery window' : insight}</p>
+        </div>
+        <div>
+          <span className="ai-mini-label">Current goal</span>
+          <strong>Build strength without losing mobility</strong>
+          <p>
+            Your last two bookings were high-control sessions. This week should balance one
+            strength class, one mobility session, and one lighter social activity.
+          </p>
+          <button className="text-action-button" type="button" onClick={onChangeDetails}>
+            Change details
+          </button>
+        </div>
+      </div>
+
+      <div className="ai-advice-grid">
+        <article>
+          <span>Advice</span>
+          <p>Keep intensity medium today. Your next hard class fits better tomorrow evening.</p>
+        </article>
+        <article>
+          <span>Best match</span>
+          <p>Ignite Strength at 18:00 uses 4 credits and still has 3 open spots.</p>
+        </article>
+        <article>
+          <span>Action</span>
+          <p>Book strength, save 5 credits for weekend padel, and add recovery on Friday.</p>
+        </article>
+      </div>
+
+      <p className="assistant-session-note">{actionMessage}</p>
+      <div className="ai-action-row">
+        <button type="button" onClick={onApplyPlan}>Apply plan</button>
+        <button type="button" onClick={onGenerateAlternatives}>Generate alternatives</button>
+        <button type="button" onClick={onAskAssistant}>Ask assistant</button>
+      </div>
+    </div>
+  )
+}
+
+function AiGoalModal({ onClose, onSave }: { onClose: () => void; onSave: () => void }) {
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <div className="ai-goal-modal" role="dialog" aria-modal="true" aria-labelledby="ai-goal-title">
+        <div>
+          <span className="ai-mini-label">Personalization</span>
+          <h3 id="ai-goal-title">Update the AI training brief</h3>
+          <p>Mock inputs for the session. Saving regenerates the assistant plan locally.</p>
+        </div>
+        <div className="goal-form-grid">
+          <label>
+            <span>Main goal</span>
+            <input defaultValue="Build strength without losing mobility" />
+          </label>
+          <label>
+            <span>Preferred intensity</span>
+            <select defaultValue="medium">
+              <option value="low">Low recovery focus</option>
+              <option value="medium">Medium balanced</option>
+              <option value="high">High performance</option>
+            </select>
+          </label>
+          <label>
+            <span>Available days</span>
+            <input defaultValue="Tuesday, Friday, Saturday" />
+          </label>
+          <label>
+            <span>City area</span>
+            <input defaultValue="Karlin and Smichov" />
+          </label>
+        </div>
+        <div className="modal-action-row">
+          <button type="button" onClick={onClose}>Cancel</button>
+          <button type="button" onClick={onSave}>Save and regenerate</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function DashboardCard({
   title,
   children,
+  accent = false,
   wide = false,
 }: {
   title: string
   children: ReactNode
+  accent?: boolean
   wide?: boolean
 }) {
   return (
-    <article className={`dashboard-card ${wide ? 'wide' : ''}`}>
+    <article className={`dashboard-card reveal-card ${wide ? 'wide' : ''} ${accent ? 'accent' : ''}`}>
       <h3>{title}</h3>
       {children}
     </article>
