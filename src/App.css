@@ -630,12 +630,14 @@ p {
 .operating-section,
 .city-section,
 .form-section,
-.client-steps-section {
+.client-steps-section,
+.platform-section {
   padding: clamp(110px, 14vw, 190px) 0;
 }
 
 .client-steps-section,
-.consumer-motion-section {
+.consumer-motion-section,
+.platform-section {
   width: min(1180px, calc(100% - 36px));
   margin: 0 auto;
 }
@@ -673,6 +675,8 @@ p {
 .image-bento,
 .client-bento-image,
 .ops-card,
+.platform-card,
+.infrastructure-banner,
 .city-card,
 .lead-form {
   border: 1px solid rgba(248, 243, 237, 0.12);
@@ -963,6 +967,146 @@ p {
   color: rgba(248, 243, 237, 0.68);
   font-size: 15px;
   line-height: 1.46;
+}
+
+.platform-section {
+  position: relative;
+}
+
+.platform-section::before {
+  content: '';
+  position: absolute;
+  inset: 70px -12% auto auto;
+  z-index: 0;
+  width: min(420px, 48vw);
+  height: min(420px, 48vw);
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 133, 82, 0.2), transparent 68%);
+  filter: blur(18px);
+  pointer-events: none;
+}
+
+.platform-section > * {
+  position: relative;
+  z-index: 1;
+}
+
+.platform-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.platform-card {
+  display: grid;
+  min-height: 260px;
+  align-content: space-between;
+  gap: 18px;
+  overflow: hidden;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 133, 82, 0.14), transparent 12rem),
+    linear-gradient(145deg, rgba(248, 243, 237, 0.08), rgba(248, 243, 237, 0.035)),
+    rgba(12, 12, 10, 0.68);
+  transition:
+    transform 300ms ease,
+    border-color 300ms ease,
+    background 300ms ease;
+}
+
+.platform-card::before {
+  content: '';
+  width: 48px;
+  height: 48px;
+  border-radius: 17px;
+  background:
+    linear-gradient(135deg, #ff8552, #cbf3d2);
+  box-shadow: 0 18px 44px rgba(255, 133, 82, 0.22);
+}
+
+.platform-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(203, 243, 210, 0.34);
+  background:
+    radial-gradient(circle at 18% 12%, rgba(203, 243, 210, 0.13), transparent 12rem),
+    linear-gradient(145deg, rgba(255, 133, 82, 0.11), rgba(248, 243, 237, 0.04)),
+    rgba(12, 12, 10, 0.74);
+}
+
+.platform-card span {
+  color: #ffffff;
+  font-size: clamp(22px, 2.3vw, 31px);
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.platform-card p {
+  margin: 0;
+  color: rgba(248, 243, 237, 0.68);
+  font-size: 15px;
+  line-height: 1.46;
+}
+
+.infrastructure-banner {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.42fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  margin-top: 16px;
+  padding: clamp(24px, 4vw, 38px);
+  border-color: rgba(255, 133, 82, 0.28);
+  background:
+    radial-gradient(circle at 12% 50%, rgba(255, 133, 82, 0.28), transparent 18rem),
+    linear-gradient(135deg, rgba(255, 133, 82, 0.12), rgba(203, 243, 210, 0.07)),
+    rgba(248, 243, 237, 0.055);
+}
+
+.infrastructure-banner strong {
+  color: #ffffff;
+  font-size: clamp(25px, 3vw, 40px);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.infrastructure-banner p {
+  margin: 0;
+  color: rgba(248, 243, 237, 0.7);
+  font-size: clamp(16px, 1.7vw, 19px);
+  line-height: 1.44;
+}
+
+.page-clients .platform-section::before {
+  inset: 50px auto auto -10%;
+  background: radial-gradient(circle, rgba(203, 243, 210, 0.8), transparent 68%);
+}
+
+.page-clients .platform-card {
+  border-color: rgba(30, 29, 26, 0.09);
+  background:
+    radial-gradient(circle at 16% 14%, rgba(203, 243, 210, 0.78), transparent 13rem),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 250, 245, 0.72));
+  box-shadow: 0 28px 72px rgba(255, 133, 82, 0.1);
+}
+
+.page-clients .platform-card::before {
+  background:
+    radial-gradient(circle at 38% 36%, #1e1d1a 0 15%, transparent 16%),
+    linear-gradient(135deg, #ff8552, #cbf3d2);
+}
+
+.page-clients .platform-card:hover {
+  border-color: rgba(255, 133, 82, 0.28);
+  background:
+    radial-gradient(circle at 16% 14%, rgba(255, 133, 82, 0.16), transparent 13rem),
+    linear-gradient(145deg, #ffffff, #f8fff9);
+}
+
+.page-clients .platform-card span {
+  color: #1e1d1a;
+}
+
+.page-clients .platform-card p {
+  color: rgba(30, 29, 26, 0.64);
 }
 
 .city-grid {
@@ -1561,6 +1705,7 @@ p {
   .audience-grid,
   .city-grid,
   .client-step-grid,
+  .platform-grid,
   .demo-flow-grid,
   .demo-activity-grid,
   .dashboard-header,
@@ -1600,6 +1745,10 @@ p {
 
   .dashboard-card.wide {
     grid-column: auto;
+  }
+
+  .infrastructure-banner {
+    grid-template-columns: 1fr;
   }
 }
 

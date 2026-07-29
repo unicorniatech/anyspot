@@ -77,6 +77,44 @@ const operatingCards = [
   },
 ]
 
+const gymPlatformCards = [
+  {
+    title: 'AI booking copilot',
+    body: 'Help your team answer booking questions, explain class options, summarize demand, and create useful operating reports.',
+  },
+  {
+    title: 'Content engine for studios',
+    body: 'Turn schedules, trainer notes, and class themes into posts, announcements, newsletters, and launch campaigns.',
+  },
+  {
+    title: 'Private data layer',
+    body: 'Build around clear consent, protected customer data, and resilient local-first workflows before connecting production systems.',
+  },
+  {
+    title: 'Website and hosting included',
+    body: 'Run your gym website on the AnySpot platform without separate hosting fees: one monthly subscription, no extra platform fees.',
+  },
+]
+
+const clientAiCards = [
+  {
+    title: 'Personal class matching',
+    body: 'Recommendations can follow your goals, schedule, city, preferred intensity, and training history.',
+  },
+  {
+    title: 'Intensity and progress analysis',
+    body: 'Track how hard you train, when to recover, and which class mix supports your plan.',
+  },
+  {
+    title: 'Fitness advice that adapts',
+    body: 'Ask questions, get personalized suggestions, and keep your next booking aligned with your goals.',
+  },
+  {
+    title: 'Privacy by design',
+    body: 'Your plan, activity, and preferences should stay protected, portable, and clear to control.',
+  },
+]
+
 const cityCards = [
   'Prague yoga',
   'Brno pilates',
@@ -511,6 +549,32 @@ function GymLanding() {
         </div>
       </section>
 
+      <section className="platform-section gym-platform-section">
+        <div className="section-copy">
+          <p className="eyebrow">AI, privacy, and infrastructure</p>
+          <h2>More than reservations: a resilient operating layer for your studio.</h2>
+          <p>
+            AnySpot can support bookings, questions, reports, advice, content, and your public web
+            presence through one monthly subscription instead of scattered tools and extra fees.
+          </p>
+        </div>
+        <div className="platform-grid">
+          {gymPlatformCards.map((item) => (
+            <article className="platform-card reveal-card" key={item.title}>
+              <span>{item.title}</span>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </div>
+        <div className="infrastructure-banner reveal-card">
+          <strong>No usage fees in the MVP offer.</strong>
+          <p>
+            A simple monthly subscription for modern hosting, protected data workflows, and
+            state-of-the-art hyperlocal connections between your studio and the people nearby.
+          </p>
+        </div>
+      </section>
+
       <WaitlistForm
         audience="gym"
         id="gym-register"
@@ -588,6 +652,26 @@ function ClientLanding() {
       <section className="consumer-motion-section">
         <div className="consumer-image motion-image" />
         <ScrollStatement words="Search by city, class type, time, credits, trainer, and vibe. Keep your week flexible without choosing one studio forever." />
+      </section>
+
+      <section className="platform-section client-ai-section">
+        <div className="section-copy">
+          <p className="eyebrow">AI fitness layer</p>
+          <h2>A smarter way to choose your next class.</h2>
+          <p>
+            AnySpot can become a private assistant for your training plan: tracking progress,
+            understanding intensity, answering questions, and recommending classes that match
+            your goals instead of random popularity.
+          </p>
+        </div>
+        <div className="platform-grid client-platform-grid">
+          {clientAiCards.map((item) => (
+            <article className="platform-card reveal-card" key={item.title}>
+              <span>{item.title}</span>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="city-section">
