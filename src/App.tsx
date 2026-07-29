@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useGSAP } from '@gsap/react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Dashboards } from './Dashboards'
 import brandIcon from './assets/brand/anyspot-icon-transparent.png'
 import brandLogo from './assets/brand/anyspot-logo-transparent.png'
@@ -6,366 +9,752 @@ import goldenCardIntro from './assets/cards/golden-card-intro.png'
 import heroVideo from './assets/videos/anyspotvideo2.mp4'
 import './App.css'
 
-const storySteps = [
+gsap.registerPlugin(ScrollTrigger, useGSAP)
+
+type Page = 'home' | 'gyms' | 'clients' | 'appDemo'
+type Audience = 'gym' | 'client'
+
+const gymBenefits = [
   {
-    eyebrow: 'For flexible movers',
-    title: 'Find the class that fits today.',
-    body: 'Search boutique gyms, studios, trainers, and fitness spaces across Czechia. Buy credits once and book instantly.',
+    title: 'Fill unused class capacity',
+    body: 'Turn empty spots into paid visits without discounting your public prices.',
   },
   {
-    eyebrow: 'For independent gyms',
-    title: 'A fairer marketplace for every visit.',
-    body: 'AnySpot is built around stronger payouts, capacity control, and a modern calendar for studios that deserve better economics.',
+    title: 'Keep a fairer visit payout',
+    body: 'The MVP model targets about 85% back to the studio on completed visits.',
   },
   {
-    eyebrow: 'Operating system',
-    title: 'Booking, credits, payouts, and growth in one place.',
-    body: 'The MVP starts with discovery and booking. The platform grows into the daily operating layer for boutique fitness spaces.',
+    title: 'Run bookings from one place',
+    body: 'Capacity, reservations, payouts, and schedule updates stay in one operating layer.',
   },
 ]
 
-const activities = [
-  { name: 'Yoga', popularity: 84, bookings: 1240, trend: '+18%' },
-  { name: 'Pilates', popularity: 92, bookings: 1680, trend: '+31%' },
-  { name: 'Barre', popularity: 68, bookings: 740, trend: '+14%' },
-  { name: 'Padel', popularity: 76, bookings: 910, trend: '+22%' },
-  { name: 'Cycling', popularity: 71, bookings: 820, trend: '+11%' },
-  { name: 'Strength', popularity: 88, bookings: 1510, trend: '+27%' },
+const clientBenefits = [
+  {
+    title: 'Tell us your city',
+    body: 'We use demand to prioritize the first Czech launch areas.',
+  },
+  {
+    title: 'Pick your training mood',
+    body: 'Yoga today, padel next week, pilates when your schedule changes.',
+  },
+  {
+    title: 'Book with credits',
+    body: 'No long contract, no guessing, no calling three studios to find a slot.',
+  },
 ]
 
-function useScrollScrubVideo() {
-  const sectionRef = useRef<HTMLElement | null>(null)
-  const videoRef = useRef<HTMLVideoElement | null>(null)
-  const [progress, setProgress] = useState(0)
-  const [isReady, setIsReady] = useState(false)
+const gymMetrics = [
+  { value: '85%', label: 'target payout model' },
+  { value: '14d', label: 'payout rhythm' },
+  { value: '10', label: 'pilot studio spots' },
+]
 
-  useEffect(() => {
-    let frame = 0
+const operatingCards = [
+  {
+    title: 'Reservations',
+    body: 'Front-desk visibility for who is booked, who arrived, and which spaces are still open.',
+  },
+  {
+    title: 'Capacity',
+    body: 'Protect regular members while opening only the spots you want to sell through AnySpot.',
+  },
+  {
+    title: 'Payouts',
+    body: 'A simple estimate of completed visits, commission, and upcoming payout windows.',
+  },
+  {
+    title: 'Class calendar',
+    body: 'Add sessions, edit trainers, and test new times before connecting the real backend.',
+  },
+  {
+    title: 'New customers',
+    body: 'Use marketplace demand to bring new people into quieter hours and first-visit offers.',
+  },
+  {
+    title: 'Pilot analytics',
+    body: 'See which activities, time slots, and neighborhoods are showing the strongest demand.',
+  },
+]
 
-    const updateScrollVideo = () => {
-      if (frame) {
-        return
-      }
+const cityCards = [
+  'Prague yoga',
+  'Brno pilates',
+  'Ostrava strength',
+  'Padel clubs',
+  'Barre studios',
+  'Cycling rooms',
+]
 
-      frame = window.requestAnimationFrame(() => {
-        frame = 0
-        const section = sectionRef.current
-        const video = videoRef.current
+function getPageFromPath(pathname: string): Page {
+  if (pathname.startsWith('/app-demo')) {
+    return 'appDemo'
+  }
 
-        if (!section || !video) {
-          return
-        }
+  if (pathname.startsWith('/gyms')) {
+    return 'gyms'
+  }
 
-        const rect = section.getBoundingClientRect()
-        const scrollable = Math.max(section.offsetHeight - window.innerHeight, 1)
-        const rawProgress = Math.min(Math.max(-rect.top / scrollable, 0), 1)
+  if (pathname.startsWith('/clients')) {
+    return 'clients'
+  }
 
-        setProgress(rawProgress)
-
-        if (video.duration && Number.isFinite(video.duration)) {
-          const targetTime = rawProgress * Math.max(video.duration - 0.05, 0)
-
-          if (Math.abs(video.currentTime - targetTime) > 0.035) {
-            video.currentTime = targetTime
-          }
-        }
-      })
-    }
-
-    updateScrollVideo()
-    window.addEventListener('scroll', updateScrollVideo, { passive: true })
-    window.addEventListener('resize', updateScrollVideo)
-
-    return () => {
-      window.removeEventListener('scroll', updateScrollVideo)
-      window.removeEventListener('resize', updateScrollVideo)
-      if (frame) {
-        window.cancelAnimationFrame(frame)
-      }
-    }
-  }, [])
-
-  return { sectionRef, videoRef, progress, isReady, setIsReady }
+  return 'home'
 }
 
-function useScrollReveal<T extends HTMLElement>() {
-  const ref = useRef<T | null>(null)
-  const [isVisible, setIsVisible] = useState(false)
+function pathForPage(page: Page) {
+  if (page === 'appDemo') {
+    return '/app-demo'
+  }
 
-  useEffect(() => {
-    const element = ref.current
+  if (page === 'gyms') {
+    return '/gyms'
+  }
 
-    if (!element) {
-      return
-    }
+  if (page === 'clients') {
+    return '/clients'
+  }
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) {
-          return
-        }
-
-        setIsVisible(true)
-        observer.disconnect()
-      },
-      {
-        rootMargin: '0px 0px -14% 0px',
-        threshold: 0.18,
-      },
-    )
-
-    observer.observe(element)
-
-    return () => observer.disconnect()
-  }, [])
-
-  return [ref, isVisible] as const
+  return '/'
 }
 
 function App() {
-  const heroScrub = useScrollScrubVideo()
-  const [creditGridRef, isCreditGridVisible] = useScrollReveal<HTMLDivElement>()
-  const [activityGridRef, isActivityGridVisible] = useScrollReveal<HTMLDivElement>()
-  const {
-    sectionRef: heroSectionRef,
-    videoRef: heroVideoRef,
-    progress: heroProgress,
-    isReady: isHeroReady,
-    setIsReady: setIsHeroReady,
-  } = heroScrub
-  const activeStep = useMemo(() => {
-    return Math.min(storySteps.length - 1, Math.floor(heroProgress * storySteps.length))
-  }, [heroProgress])
+  const [page, setPage] = useState<Page>(() => getPageFromPath(window.location.pathname))
 
-  const progressPercent = `${Math.round(heroProgress * 100)}%`
-  const markHeroVideoReady = () => {
-    setIsHeroReady(true)
+  useEffect(() => {
+    const syncRoute = () => setPage(getPageFromPath(window.location.pathname))
 
-    const video = heroVideoRef.current
+    window.addEventListener('popstate', syncRoute)
 
-    if (!video) {
-      return
-    }
+    return () => window.removeEventListener('popstate', syncRoute)
+  }, [])
 
-    video.muted = true
-    video.playsInline = true
-
-    void video
-      .play()
-      .then(() => video.pause())
-      .catch(() => undefined)
+  const navigate = (nextPage: Page) => {
+    const nextPath = pathForPage(nextPage)
+    window.history.pushState({}, '', nextPath)
+    setPage(nextPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   return (
-    <main className="landing">
-      <nav className="nav">
-        <a className="brand" href="#top" aria-label="AnySpot home">
-          <span className="brand-mark" aria-hidden="true">
-            <img src={brandIcon} alt="" />
-          </span>
-          <span>AnySpot</span>
-        </a>
-        <div className="nav-links" aria-label="Primary navigation">
-          <a href="#credits">Credits</a>
-          <a href="#gyms">For gyms</a>
-          <a href="#dashboards">Dashboards</a>
-          <a href="#waitlist">Waitlist</a>
-        </div>
-        <a className="nav-cta" href="#waitlist">
-          Join waitlist
-        </a>
-      </nav>
+    <MotionShell page={page}>
+      <Navigation page={page} navigate={navigate} />
+      {page === 'home' && <ChooserPage navigate={navigate} />}
+      {page === 'gyms' && <GymLanding />}
+      {page === 'clients' && <ClientLanding />}
+      {page === 'appDemo' && <AppDemoLanding />}
+      <SiteFooter navigate={navigate} />
+    </MotionShell>
+  )
+}
 
-      <section className="scroll-cinema" id="top" ref={heroSectionRef}>
-        <div className="cinema-sticky">
-          <video
-            ref={heroVideoRef}
-            className={`hero-video ${isHeroReady ? 'is-ready' : ''}`}
-            src={heroVideo}
-            muted
-            playsInline
-            preload="auto"
-            onCanPlay={markHeroVideoReady}
-            onLoadedData={markHeroVideoReady}
-            onLoadedMetadata={markHeroVideoReady}
-            aria-label="AnySpot cinematic fitness preview"
-          />
-          <div className="video-overlay" />
-          <div className="orange-glow" />
+function MotionShell({ children, page }: { children: ReactNode; page: Page }) {
+  const shellRef = useRef<HTMLElement | null>(null)
 
-          <div className="hero-copy">
-            <p className="kicker">Czech fitness marketplace</p>
-            <h1>Flexible fitness access. Fair payouts for local studios.</h1>
-            <p className="hero-lede">
-              AnySpot is a modern fitness marketplace and booking operating
-              system for boutique gyms, trainers, and fitness spaces.
-            </p>
-            <div className="hero-actions">
-              <a className="button primary" href="#classes">
-                Find your next class
-              </a>
-              <a className="button secondary" href="#gyms">
-                Partner with us
-              </a>
-            </div>
-          </div>
+  useGSAP(
+    () => {
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-          <div className="scroll-panel" aria-live="polite">
-            <span>{storySteps[activeStep].eyebrow}</span>
-            <strong>{storySteps[activeStep].title}</strong>
-            <p>{storySteps[activeStep].body}</p>
-          </div>
+      gsap.fromTo(
+        '.motion-hero',
+        { opacity: 0, y: 34 },
+        { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out' },
+      )
 
-          <div className="scroll-meter" aria-hidden="true">
-            <div style={{ width: progressPercent }} />
-          </div>
-        </div>
-      </section>
+      if (reduceMotion) {
+        gsap.set('.reveal-card, .motion-image, .scrub-word, .float-loop', {
+          clearProps: 'all',
+          opacity: 1,
+        })
 
-      <section className="section intro" id="credits">
-        <div>
-          <p className="section-kicker">How credits work</p>
-          <h2>One balance. Many ways to train.</h2>
-        </div>
-        <div
-          ref={creditGridRef}
-          className={`credit-grid reveal-grid ${isCreditGridVisible ? 'is-visible' : ''}`}
-        >
-          <article style={{ '--item-index': 0 } as CSSProperties}>
-            <span>01</span>
-            <h3>Buy credits</h3>
-            <p>Choose a pack in CZK and keep full control over your fitness budget.</p>
-          </article>
-          <article style={{ '--item-index': 1 } as CSSProperties}>
-            <span>02</span>
-            <h3>Book instantly</h3>
-            <p>Use credits for yoga, padel, pilates, strength, cycling, and more.</p>
-          </article>
-          <article style={{ '--item-index': 2 } as CSSProperties}>
-            <span>03</span>
-            <h3>Studios earn fairly</h3>
-            <p>Gyms receive around 85 percent per completed visit in the initial model.</p>
-          </article>
-        </div>
-      </section>
+        return
+      }
 
-      <section className="card-showcase" id="gyms">
-        <div className="card-showcase-inner">
-          <div className="card-copy">
-            <p className="section-kicker">For gyms and studios</p>
-            <h2>Membership cards that feel as premium as the studios behind them.</h2>
-            <p>
-              AnySpot can present credits as a cinematic pass: flexible for users,
-              fair for gyms, and ready to become a real wallet, booking, and payout layer.
-            </p>
-            <div className="gym-value-pills" aria-label="Gym value highlights">
-              <span>85% gym payout model</span>
-              <span>14-day payouts</span>
-              <span>Credit wallet ready</span>
-            </div>
-          </div>
+      gsap.utils.toArray<HTMLElement>('.reveal-card').forEach((card, index) => {
+        gsap.fromTo(
+          card,
+          { opacity: 0, y: 42, scale: 0.96 },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.82,
+            ease: 'power3.out',
+            delay: index * 0.04,
+            scrollTrigger: {
+              trigger: card,
+              start: 'top 84%',
+              once: true,
+            },
+          },
+        )
+      })
 
-          <div className="single-card-stage" aria-label="AnySpot premium membership card">
-            <img src={goldenCardIntro} alt="AnySpot golden premium membership card" />
-          </div>
-        </div>
-      </section>
+      gsap.utils.toArray<HTMLElement>('.motion-image').forEach((image) => {
+        gsap.fromTo(
+          image,
+          { opacity: 0.42, scale: 0.86, filter: 'brightness(0.6)' },
+          {
+            opacity: 1,
+            scale: 1,
+            filter: 'brightness(1)',
+            ease: 'none',
+            scrollTrigger: {
+              trigger: image,
+              start: 'top 92%',
+              end: 'bottom 20%',
+              scrub: true,
+            },
+          },
+        )
+      })
 
-      <section className="section" id="classes">
-        <div className="section-heading">
-          <p className="section-kicker">Featured activities</p>
-          <h2>Built for the way people actually move around a city.</h2>
-        </div>
-        <div
-          ref={activityGridRef}
-          className={`activity-grid reveal-grid ${isActivityGridVisible ? 'is-visible' : ''}`}
-        >
-          {activities.map((activity, index) => (
-            <a
-              href="#waitlist"
-              key={activity.name}
-              style={
-                {
-                  '--item-index': index,
-                  '--popularity': `${activity.popularity}%`,
-                } as CSSProperties
-              }
-            >
-              <span className="activity-name">{activity.name}</span>
-              <span className="activity-number">
-                <AnimatedNumber value={activity.bookings} /> bookings
-              </span>
-              <span className="activity-trend">{activity.trend} demand</span>
-              <span className="activity-fill" aria-hidden="true" />
-            </a>
-          ))}
-        </div>
-      </section>
+      gsap.utils.toArray<HTMLElement>('.scrub-word').forEach((word) => {
+        gsap.fromTo(
+          word,
+          { opacity: 0.14, y: 16 },
+          {
+            opacity: 1,
+            y: 0,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: word,
+              start: 'top 88%',
+              end: 'top 48%',
+              scrub: true,
+            },
+          },
+        )
+      })
 
-      <section className="waitlist" id="waitlist">
-        <img className="waitlist-logo" src={brandLogo} alt="AnySpot" />
-        <p className="section-kicker">Early access</p>
-        <h2>Be first when AnySpot opens partner testing in Czechia.</h2>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            const form = event.currentTarget
-            form.classList.add('is-submitted')
-          }}
-        >
-          <input type="email" placeholder="you@example.com" aria-label="Email address" required />
-          <button type="submit">Join waitlist</button>
-        </form>
-        <p className="form-success">You are on the list. Nice.</p>
-      </section>
+      gsap.utils.toArray<HTMLElement>('.float-loop').forEach((element, index) => {
+        gsap.to(element, {
+          y: index % 2 === 0 ? -14 : 14,
+          rotate: index % 2 === 0 ? -1.6 : 1.6,
+          duration: 2.8 + index * 0.25,
+          ease: 'sine.inOut',
+          repeat: -1,
+          yoyo: true,
+        })
+      })
+    },
+    { scope: shellRef, dependencies: [page], revertOnUpdate: true },
+  )
 
-      <Dashboards brandIcon={brandIcon} />
+  useEffect(() => {
+    const refresh = window.setTimeout(() => ScrollTrigger.refresh(), 80)
+
+    return () => window.clearTimeout(refresh)
+  }, [page])
+
+  return (
+    <main ref={shellRef} className={`site-shell page-${page}`}>
+      {children}
     </main>
   )
 }
 
-function AnimatedNumber({ value }: { value: number }) {
-  const numberRef = useRef<HTMLSpanElement | null>(null)
-  const [displayValue, setDisplayValue] = useState(0)
+function Navigation({ page, navigate }: { page: Page; navigate: (page: Page) => void }) {
+  return (
+    <nav className="top-nav">
+      <button className="brand-link" type="button" onClick={() => navigate('home')}>
+        <span className="brand-mark" aria-hidden="true">
+          <img src={brandIcon} alt="" />
+        </span>
+        <span>AnySpot</span>
+      </button>
 
-  useEffect(() => {
-    const element = numberRef.current
+      <div className="route-pill" aria-label="Audience navigation">
+        <button className={page === 'gyms' ? 'is-active' : ''} type="button" onClick={() => navigate('gyms')}>
+          For gyms
+        </button>
+        <button
+          className={page === 'clients' ? 'is-active' : ''}
+          type="button"
+          onClick={() => navigate('clients')}
+        >
+          For clients
+        </button>
+        <button
+          className={page === 'appDemo' ? 'is-active' : ''}
+          type="button"
+          onClick={() => navigate('appDemo')}
+        >
+          App demo
+        </button>
+      </div>
 
-    if (!element) {
-      return
+      <button
+        className="nav-action"
+        type="button"
+        onClick={() => navigate(page === 'clients' ? 'gyms' : 'clients')}
+      >
+        {page === 'clients' ? 'I run a studio' : 'I want to train'}
+      </button>
+    </nav>
+  )
+}
+
+function AppDemoLanding() {
+  return (
+    <div className="app-demo-page">
+      <section className="app-demo-hero motion-hero">
+        <video className="app-demo-video" src={heroVideo} muted playsInline autoPlay loop />
+        <div className="app-demo-hero-overlay" />
+        <div className="app-demo-copy">
+          <p className="eyebrow">Product prototype</p>
+          <h1>Marketplace, bookings, credits, and dashboards in one MVP demo.</h1>
+          <p>
+            This is the broader clickable prototype for showing how AnySpot can work as an app,
+            marketplace, and operating layer after the landing-page journey.
+          </p>
+          <div className="hero-actions">
+            <a className="primary-cta" href="#demo-dashboards">
+              View dashboards
+            </a>
+            <a className="secondary-cta" href="#demo-classes">
+              Explore classes
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section className="app-demo-section">
+        <div className="section-copy">
+          <h2>One credit wallet, multiple booking paths.</h2>
+          <p>Use this page for investor, partner, or internal product walkthroughs.</p>
+        </div>
+        <div className="demo-flow-grid">
+          <article className="reveal-card">
+            <span>Buy credits</span>
+            <p>Mock packages in CZK, ready for a Stripe flow later.</p>
+          </article>
+          <article className="reveal-card">
+            <span>Book a class</span>
+            <p>Class cards show time, trainer, capacity, and credits required.</p>
+          </article>
+          <article className="reveal-card">
+            <span>Confirm visit</span>
+            <p>Mock bookings persist locally and map cleanly to Supabase tables.</p>
+          </article>
+        </div>
+      </section>
+
+      <section className="app-demo-card-section">
+        <div>
+          <p className="eyebrow">Membership concept</p>
+          <h2>Credits can feel as premium as a boutique studio pass.</h2>
+          <p>
+            The demo keeps the card concept visible without mixing it into the conversion-focused
+            gym and client landing pages.
+          </p>
+        </div>
+        <img src={goldenCardIntro} alt="AnySpot golden membership card concept" />
+      </section>
+
+      <section className="app-demo-section" id="demo-classes">
+        <div className="section-copy">
+          <h2>Activities users can discover.</h2>
+          <p>Mock demand signals for the first Czech marketplace categories.</p>
+        </div>
+        <div className="demo-activity-grid">
+          {cityCards.map((item) => (
+            <article className="reveal-card" key={item}>
+              <span>{item}</span>
+              <p>Bookable with credits when partner supply is active.</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="app-demo-waitlist">
+        <img src={brandLogo} alt="AnySpot" />
+        <h2>Use the split landing pages for acquisition. Use this page for the app demo.</h2>
+        <div className="hero-actions">
+          <a className="primary-cta" href="/gyms">
+            Gym landing
+          </a>
+          <a className="secondary-cta" href="/clients">
+            Client landing
+          </a>
+        </div>
+      </section>
+
+      <div id="demo-dashboards" className="app-demo-dashboard-wrap">
+        <Dashboards brandIcon={brandIcon} />
+      </div>
+    </div>
+  )
+}
+
+function ChooserPage({ navigate }: { navigate: (page: Page) => void }) {
+  return (
+    <>
+      <section className="chooser-hero motion-hero">
+        <video className="ambient-video" src={heroVideo} muted playsInline autoPlay loop />
+        <div className="hero-wash" />
+        <div className="hero-center">
+          <p className="eyebrow">One product, two focused journeys</p>
+          <h1>Choose the AnySpot path built for you.</h1>
+          <p className="hero-subtitle">
+            Fitness clients and studio owners have different jobs to do. AnySpot separates the
+            message, the forms, and the tracking from the first click.
+          </p>
+          <div className="chooser-actions">
+            <button className="primary-cta" type="button" onClick={() => navigate('gyms')}>
+              I am a studio or fitness center
+            </button>
+            <button className="secondary-cta" type="button" onClick={() => navigate('clients')}>
+              I am looking for a studio
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="audience-grid">
+        <AudienceCard
+          title="For gym owners"
+          body="Lead with revenue, capacity, and a low-friction pilot. Built for outreach and partner ads."
+          action="Open gym page"
+          imageSeed="boutique-fitness-studio"
+          onClick={() => navigate('gyms')}
+        />
+        <AudienceCard
+          title="For clients"
+          body="Lead with discovery, flexible credits, and a simple city waitlist. Built for demand generation."
+          action="Open client page"
+          imageSeed="pilates-yoga-class"
+          onClick={() => navigate('clients')}
+        />
+      </section>
+    </>
+  )
+}
+
+function GymLanding() {
+  return (
+    <>
+      <section className="split-hero gym-hero motion-hero">
+        <div className="hero-text">
+          <p className="eyebrow">For studio owners</p>
+          <h1>
+            Fill quiet class times without cutting your margin.
+          </h1>
+          <p>
+            AnySpot helps boutique gyms, yoga studios, pilates rooms, padel clubs, and trainers
+            bring in new clients while keeping a clearer, fairer payout model.
+          </p>
+          <div className="metric-row" aria-label="AnySpot studio pilot metrics">
+            {gymMetrics.map((metric) => (
+              <span className="metric-pill" key={metric.label}>
+                <strong>{metric.value}</strong>
+                <small>{metric.label}</small>
+              </span>
+            ))}
+          </div>
+          <div className="hero-actions">
+            <a className="primary-cta" href="#gym-register">
+              Register for a partner call
+            </a>
+            <a className="secondary-cta" href="#gym-benefits">
+              See what we do
+            </a>
+          </div>
+        </div>
+        <div className="gold-card motion-image float-loop">
+          <img src={goldenCardIntro} alt="AnySpot premium membership card" />
+        </div>
+      </section>
+
+      <section className="proof-strip">
+        <span>Pilot program</span>
+        <strong>First 10 partner studios get 3 months of guided testing.</strong>
+        <span>Prague and Czech launch cities</span>
+      </section>
+
+      <section className="benefit-section" id="gym-benefits">
+        <div className="section-copy">
+          <h2>What a studio owner needs to know first.</h2>
+          <p>
+            No diluted marketplace pitch. This page speaks to capacity, revenue quality, and a
+            smoother operating layer.
+          </p>
+        </div>
+        <div className="bento-grid gym-bento ops-bento">
+          {gymBenefits.map((benefit) => (
+            <BenefitCard key={benefit.title} {...benefit} />
+          ))}
+          <div className="large-bento reveal-card">
+            <span>Approx. 85%</span>
+            <h3>Target studio payout on completed MVP visits.</h3>
+          </div>
+          <div className="image-bento reveal-card motion-image" />
+        </div>
+      </section>
+
+      <ScrollStatement
+        words="Turn quiet hours into booked sessions, control capacity, see expected payouts, and learn which classes bring the right clients back."
+      />
+
+      <section className="operating-section">
+        <div className="section-copy">
+          <h2>A booking layer that can become your fitness operating system.</h2>
+          <p>Start with discovery and reservations. Grow into payouts, schedules, and partner analytics.</p>
+        </div>
+        <div className="ops-grid">
+          {operatingCards.map((item) => (
+            <article className="ops-card reveal-card" key={item.title}>
+              <span>{item.title}</span>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <WaitlistForm
+        audience="gym"
+        id="gym-register"
+        title="Register your studio for the pilot conversation."
+        body="Leave the basics and we will schedule a Zoom or in-person intro to understand your classes, pricing, capacity, and payout expectations."
+        fields={[
+          { name: 'name', label: 'Your name', type: 'text' },
+          { name: 'email', label: 'Email', type: 'email' },
+          { name: 'studioName', label: 'Studio name', type: 'text' },
+        ]}
+        buttonText="Request partner intro"
+      />
+    </>
+  )
+}
+
+function ClientLanding() {
+  return (
+    <>
+      <section className="client-hero client-hero-light motion-hero">
+        <div className="hero-text">
+          <p className="eyebrow">For people who train around real life</p>
+          <h1>
+            Find a studio that fits your week.
+          </h1>
+          <p>
+            Join the AnySpot waitlist and help shape which studios, cities, and class types open first.
+          </p>
+          <div className="hero-actions">
+            <a className="primary-cta" href="#client-waitlist">
+              Join client waitlist
+            </a>
+            <a className="secondary-cta" href="#client-benefits">
+              How it works
+            </a>
+          </div>
+        </div>
+        <div className="client-phone-stage motion-image">
+          <div className="phone-card float-loop">
+            <span className="phone-topline">Tonight near you</span>
+            <strong>Pilates Flow</strong>
+            <p>Karlin, 18:30</p>
+            <div className="credit-chip">6 credits</div>
+          </div>
+          <div className="phone-card phone-card-secondary float-loop">
+            <span className="phone-topline">Recommended</span>
+            <strong>Padel Club</strong>
+            <p>Smichov, Saturday</p>
+            <div className="credit-chip">8 credits</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="proof-strip">
+        <span>Client waitlist</span>
+        <strong>Be first when AnySpot opens flexible booking in Czech cities.</strong>
+        <span>No long contract</span>
+      </section>
+
+      <section className="client-steps-section" id="client-benefits">
+        <div className="section-copy">
+          <h2>Three simple choices before you train.</h2>
+          <p>AnySpot should feel closer to choosing a playlist than signing a contract.</p>
+        </div>
+        <div className="client-step-grid">
+          {clientBenefits.map((benefit) => (
+            <article className="client-step-card reveal-card" key={benefit.title}>
+              <h3>{benefit.title}</h3>
+              <p>{benefit.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="consumer-motion-section">
+        <div className="consumer-image motion-image" />
+        <ScrollStatement words="Search by city, class type, time, credits, trainer, and vibe. Keep your week flexible without choosing one studio forever." />
+      </section>
+
+      <section className="city-section">
+        <div className="section-copy">
+          <h2>Tell us what to bring to your city first.</h2>
+          <p>Demand is tracked by city and activity, so launch supply can follow real interest.</p>
+        </div>
+        <div className="city-grid">
+          {cityCards.map((item) => (
+            <article className="city-card reveal-card" key={item}>
+              <span>{item}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <WaitlistForm
+        audience="client"
+        id="client-waitlist"
+        title="Join the client waitlist."
+        body="Tell us where you train so we can prioritize the right studios and launch cities."
+        fields={[
+          { name: 'name', label: 'Your name', type: 'text' },
+          { name: 'email', label: 'Email', type: 'email' },
+          { name: 'city', label: 'City', type: 'text' },
+        ]}
+        buttonText="Join waitlist"
+      />
+    </>
+  )
+}
+
+function AudienceCard({
+  action,
+  body,
+  imageSeed,
+  onClick,
+  title,
+}: {
+  action: string
+  body: string
+  imageSeed: string
+  onClick: () => void
+  title: string
+}) {
+  return (
+    <button className="audience-card reveal-card" type="button" onClick={onClick}>
+      <span
+        className="audience-image"
+        style={{ backgroundImage: `url(https://picsum.photos/seed/${imageSeed}/900/680)` }}
+        aria-hidden="true"
+      />
+      <span className="audience-content">
+        <strong>{title}</strong>
+        <span>{body}</span>
+        <em>{action}</em>
+      </span>
+    </button>
+  )
+}
+
+function BenefitCard({ body, title }: { body: string; title: string }) {
+  return (
+    <article className="benefit-card reveal-card">
+      <h3>{title}</h3>
+      <p>{body}</p>
+    </article>
+  )
+}
+
+function ScrollStatement({ words }: { words: string }) {
+  const splitWords = useMemo(() => words.split(' '), [words])
+
+  return (
+    <section className="scrub-section" aria-label={words}>
+      <p>
+        {splitWords.map((word, index) => (
+          <span className="scrub-word" key={`${word}-${index}`}>
+            {word}
+          </span>
+        ))}
+      </p>
+    </section>
+  )
+}
+
+function WaitlistForm({
+  audience,
+  body,
+  buttonText,
+  fields,
+  id,
+  title,
+}: {
+  audience: Audience
+  body: string
+  buttonText: string
+  fields: Array<{ name: string; label: string; type: string }>
+  id: string
+  title: string
+}) {
+  const [submitted, setSubmitted] = useState(false)
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = event.currentTarget
+    const formData = new FormData(form)
+    const entry = {
+      audience,
+      createdAt: new Date().toISOString(),
+      sourcePath: window.location.pathname,
+      values: Object.fromEntries(formData.entries()),
     }
+    const existing = window.localStorage.getItem('anyspot_waitlist_entries')
+    const entries = existing ? (JSON.parse(existing) as Array<unknown>) : []
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) {
-          return
-        }
+    window.localStorage.setItem('anyspot_waitlist_entries', JSON.stringify([...entries, entry]))
+    setSubmitted(true)
+    form.reset()
+  }
 
-        const start = performance.now()
-        const duration = 1100
+  return (
+    <section className="form-section" id={id}>
+      <div className="form-copy">
+        <h2>{title}</h2>
+        <p>{body}</p>
+      </div>
+      <form className="lead-form reveal-card" onSubmit={handleSubmit}>
+        {fields.map((field) => (
+          <label key={field.name}>
+            <span>{field.label}</span>
+            <input name={field.name} type={field.type} required />
+          </label>
+        ))}
+        <button className="primary-cta" type="submit">
+          {buttonText}
+        </button>
+        <p className={`form-status ${submitted ? 'is-visible' : ''}`}>
+          Saved locally for the MVP demo. We will connect this to Supabase later.
+        </p>
+      </form>
+    </section>
+  )
+}
 
-        const tick = (now: number) => {
-          const progress = Math.min((now - start) / duration, 1)
-          const eased = 1 - Math.pow(1 - progress, 3)
-          setDisplayValue(Math.round(value * eased))
-
-          if (progress < 1) {
-            window.requestAnimationFrame(tick)
-          }
-        }
-
-        window.requestAnimationFrame(tick)
-        observer.disconnect()
-      },
-      { threshold: 0.35 },
-    )
-
-    observer.observe(element)
-
-    return () => observer.disconnect()
-  }, [value])
-
-  return <span ref={numberRef}>{displayValue.toLocaleString('cs-CZ')}</span>
+function SiteFooter({ navigate }: { navigate: (page: Page) => void }) {
+  return (
+    <footer className="site-footer">
+      <button className="brand-link" type="button" onClick={() => navigate('home')}>
+        <span className="brand-mark" aria-hidden="true">
+          <img src={brandIcon} alt="" />
+        </span>
+        <span>AnySpot</span>
+      </button>
+      <div>
+        <button type="button" onClick={() => navigate('gyms')}>
+          Gym landing
+        </button>
+        <button type="button" onClick={() => navigate('clients')}>
+          Client landing
+        </button>
+        <button type="button" onClick={() => navigate('appDemo')}>
+          App demo
+        </button>
+      </div>
+    </footer>
+  )
 }
 
 export default App
